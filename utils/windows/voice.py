@@ -1,8 +1,8 @@
+
 import time
 import os
-
+from dotenv import load_dotenv
 assert os.name == 'nt' # type: ignore
-
 import win32com.client
 import utils.hotkeys
 import utils.voice_splitter
@@ -10,6 +10,7 @@ import utils.zw_logging
 import utils.soundboard
 import utils.settings
 import API.api_controller
+import utils.openai_tts
 
 is_speaking = False
 cut_voice = False
@@ -39,9 +40,24 @@ def speak_line(s_message, refuse_pause):
             pure_chunk = pure_chunk.replace("!!!!", "!")
             pure_chunk = pure_chunk.replace("!!!!!", "!")
 
-            # Speak
-            speaker = win32com.client.Dispatch("SAPI.SpVoice")
-            speaker.Speak(pure_chunk)
+            if utils.settings.tts_mode == "api":
+                # Load API connection settings only if needed
+                from dotenv import load_dotenv
+                load_dotenv()
+                openai_api_url = os.environ.get("OPENAI_TTS_API_URL")
+                openai_api_key = os.environ.get("OPENAI_TTS_API_KEY")
+                openai_voice = os.environ.get("OPENAI_TTS_VOICE", "alloy")
+                # Use OpenAI API TTS
+                utils.openai_tts.speak_with_openai_api(
+                    pure_chunk,
+                    api_url=openai_api_url,
+                    api_key=openai_api_key,
+                    voice=openai_voice
+                )
+            else:
+                # Use system TTS
+                speaker = win32com.client.Dispatch("SAPI.SpVoice")
+                speaker.Speak(pure_chunk)
 
             if not refuse_pause:
                 time.sleep(0.05)    # IMPORTANT: Mini-rests between chunks for other calculations in the program to run.
@@ -53,8 +69,8 @@ def speak_line(s_message, refuse_pause):
                 cut_voice = False
                 break
 
-        except:
-            utils.zw_logging.update_debug_log("Error with voice!")
+        except Exception as e:
+            utils.zw_logging.update_debug_log(f"Error with voice! {e}")
 
 
 

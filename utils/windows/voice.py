@@ -39,9 +39,25 @@ def speak_line(s_message, refuse_pause):
             pure_chunk = pure_chunk.replace("!!!!", "!")
             pure_chunk = pure_chunk.replace("!!!!!", "!")
 
-            # Speak
-            speaker = win32com.client.Dispatch("SAPI.SpVoice")
-            speaker.Speak(pure_chunk)
+            if utils.settings.tts_mode == "api":
+                # Load API connection settings only if needed
+                from dotenv import load_dotenv
+                load_dotenv()
+                openai_api_url = os.environ.get("OPENAI_TTS_API_URL")
+                openai_api_key = os.environ.get("OPENAI_TTS_API_KEY")
+                openai_voice = os.environ.get("OPENAI_TTS_VOICE", "alloy")
+                # Use OpenAI API TTS
+                import utils.openai_tts
+                utils.openai_tts.speak_with_openai_api(
+                    pure_chunk,
+                    api_url=openai_api_url,
+                    api_key=openai_api_key,
+                    voice=openai_voice
+                )
+            else:
+                # Use system TTS
+                speaker = win32com.client.Dispatch("SAPI.SpVoice")
+                speaker.Speak(pure_chunk)
 
             if not refuse_pause:
                 time.sleep(0.05)    # IMPORTANT: Mini-rests between chunks for other calculations in the program to run.

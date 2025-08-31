@@ -40,6 +40,9 @@ cur_task_char = "None"
 # Gaming
 is_gaming_loop = False
 
+# TTS mode: "system" for OS TTS, "api" for OpenAI-compatible API
+tts_mode = "system"  # Change to "api" to use API-based TTS
+
 minecraft_enabled = False
 gaming_enabled = True
 alarm_enabled = True
